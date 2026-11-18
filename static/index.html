@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Usagi Vocab 🐰 | Học Từ Vựng Tiếng Anh Thông Minh</title>
+    <!-- Tailwind CSS (Graceful local fallback supported) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="bg-[#f8fafc] text-slate-800 flex h-screen overflow-hidden font-['Nunito',sans-serif]">
+
+    <!-- ================================================================= -->
+    <!-- 1. SIDEBAR ĐIỀU HƯỚNG BÊN TRÁI (CỐ ĐỊNH, CÓ NÚT THU GỌN) -->
+    <!-- ================================================================= -->
+    <aside id="sidebar" class="bg-white border-r border-slate-200/80 flex flex-col justify-between p-4 z-40 select-none shadow-sm flex-shrink-0">
+        <div class="space-y-6">
+            <!-- App Brand & Mascot Avatar -->
+            <div class="flex items-center gap-3 px-2 py-1">
+                <div class="relative w-12 h-12 flex-shrink-0 rounded-2xl overflow-hidden border-2 border-[#84a96b] bg-[#e8f3dc] shadow-sm flex items-center justify-center">
+                    <img src="/static/mascot.png" alt="Usagi Mascot" class="w-full h-full object-cover mascot-bounce">
+                </div>
+                <div class="sidebar-text overflow-hidden">
+                    <h1 class="text-lg font-black text-slate-800 tracking-tight leading-tight flex items-center gap-1.5">
+                        Usagi Vocab <span class="text-sm">🐰</span>
+                    </h1>
+                    <p class="text-[11px] font-bold text-[#5e8346] tracking-wider uppercase">100% Offline Engine</p>
+                </div>
+            </div>
+
+            <!-- Navigation Links -->
+            <nav class="space-y-1.5">
+                <button class="nav-item active w-full" data-tab="tab-home" title="Trang chủ & Streak">
+                    <span class="text-xl">🏠</span>
+                    <span class="sidebar-text font-bold">Trang chủ</span>
+                </button>
+                <button class="nav-item w-full" data-tab="tab-add" title="Thêm từ tự động & Trích xuất đoạn văn">
+                    <span class="text-xl">✨</span>
+                    <span class="sidebar-text font-bold">Thêm từ tự động</span>
+                </button>
+                <button class="nav-item w-full" data-tab="tab-vault" title="Kho từ vựng cá nhân">
+                    <span class="text-xl">📚</span>
+                    <span class="sidebar-text font-bold flex-grow text-left">Kho từ vựng</span>
+                    <span id="sidebarVaultBadge" class="sidebar-badge text-xs px-2 py-0.5 rounded-full bg-[#fce7f3] text-[#db2777] font-extrabold">0</span>
+                </button>
+                <button class="nav-item w-full" data-tab="tab-flashcards" title="Học Flashcard lật thẻ 3D">
+                    <span class="text-xl">🃏</span>
+                    <span class="sidebar-text font-bold">Học Flashcard</span>
+                </button>
+                <button class="nav-item w-full" data-tab="tab-review" title="Ôn tập bắt buộc & Cài đặt">
+                    <span class="text-xl">🔒</span>
+                    <span class="sidebar-text font-bold">Ôn tập bắt buộc</span>
+                </button>
+            </nav>
+        </div>
+
+        <!-- Sidebar Footer Card & Collapse Toggle -->
+        <div class="space-y-3 pt-4 border-t border-slate-100">
+            <!-- Mini mascot progress message -->
+            <div class="sidebar-footer-card bg-[#fffdf5] border border-amber-200/70 p-3 rounded-2xl flex items-center gap-3">
+                <img src="/static/mascot.png" class="w-9 h-9 rounded-xl object-cover flex-shrink-0" alt="Usagi">
+                <div class="text-[11px] leading-tight">
+                    <span class="font-extrabold text-amber-900 block">Bé thỏ nhắc bạn:</span>
+                    <span id="sidebarMascotTip" class="text-slate-600">Học 5 từ mới mỗi ngày nhé!</span>
+                </div>
+            </div>
+
+            <!-- Toggle Collapse Button -->
+            <button id="btnToggleSidebar" class="w-full flex items-center justify-center gap-2 py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition">
+                <span id="collapseIcon">◀◀</span>
+                <span class="sidebar-text">Thu gọn</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- ================================================================= -->
+    <!-- 2. KHU VỰC NỘI DUNG CHÍNH (HEADER + MAIN VIEWS) -->
+    <!-- ================================================================= -->
+    <div class="flex-grow flex flex-col h-full overflow-hidden">
+
+        <!-- TOP BAR (HEADER) -->
+        <header class="bg-white border-b border-slate-200/80 px-6 py-3 flex items-center justify-between gap-4 z-30 shadow-sm flex-shrink-0">
+            <!-- Quick Offline Dictionary Search Pill -->
+            <div class="relative w-full max-w-md">
+                <input type="text" id="topQuickSearchInput" placeholder="🔍 Tra nhanh từ điển offline (108,000+ từ)..." 
+                       class="input-pill w-full text-sm py-2 pl-5 pr-10 border-slate-200 bg-slate-50 focus:bg-white text-slate-800 font-medium" autocomplete="off">
+                <button id="btnTopQuickSearch" class="absolute right-3 top-2.5 text-slate-400 hover:text-[#f97316] text-sm">
+                    ↵
+                </button>
+            </div>
+
+            <!-- Header Controls: Cycle, Lock Toggle, Notifications, Gamification Badge -->
+            <div class="flex items-center gap-3 flex-shrink-0">
+                <!-- Review Cycle Selector -->
+                <div class="hidden sm:flex items-center gap-1.5 text-xs bg-slate-50 px-3 py-1.5 rounded-full border border-slate-200 text-slate-600">
+                    <span>⏱️ Nhắc sau:</span>
+                    <select id="headerReviewCycle" class="bg-transparent font-bold text-slate-800 outline-none cursor-pointer">
+                        <option value="10">10 giây (Test)</option>
+                        <option value="300">5 phút</option>
+                        <option value="900">15 phút</option>
+                        <option value="1800">30 phút</option>
+                    </select>
+                </div>
+
+                <!-- Lock Screen Toggle Button -->
+                <button id="btnToggleLock" class="text-xs py-1.5 px-3 rounded-full flex items-center gap-1.5 font-bold transition border" title="Bật/Tạm dừng màn hình khóa">
+                    <span id="lockStatusIcon">⏸️</span>
+                    <span id="lockStatusText" class="hidden md:inline">Khóa: ĐANG TẠM DỪNG</span>
+                </button>
+
+                <!-- Notification Permission Button -->
+                <button id="btnRequestNotify" class="text-xs py-1.5 px-3 rounded-full border border-slate-200 text-slate-600 hover:bg-slate-50 font-bold flex items-center gap-1">
+                    <span>🔔</span> <span class="hidden lg:inline">Thông Báo</span>
+                </button>
+
+                <!-- User Level & XP Pill Badge -->
+                <div class="flex items-center gap-2 bg-[#fffdf5] border border-amber-200 px-3 py-1.5 rounded-full shadow-sm">
+                    <span class="text-xs font-black text-amber-800">LV.<span id="headerLevel">1</span></span>
+                    <div class="w-12 h-2 bg-amber-100 rounded-full overflow-hidden">
+                        <div id="headerXpBar" class="h-full bg-amber-500 rounded-full" style="width: 50%;"></div>
+                    </div>
+                    <span id="headerXpText" class="text-[11px] font-bold text-amber-700">50 XP</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- MAIN SCROLLABLE CONTENT VIEWPORT -->
+        <main class="flex-grow overflow-y-auto p-6 space-y-6">
+
+            <!-- ============================================================= -->
+            <!-- TAB 1: TRANG CHỦ (DASHBOARD & STREAK) -->
+            <!-- ============================================================= -->
+            <section id="tab-home" class="tab-content max-w-6xl mx-auto space-y-6">
+
+                <!-- Welcome Banner with Usagi Mascot -->
+                <div class="bg-gradient-to-r from-[#e8f3dc] via-[#fffdf5] to-[#fce7f3] border border-[#c3dcab]/60 rounded-3xl p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-sm relative overflow-hidden">
+                    <div class="space-y-2 z-10 text-center md:text-left">
+                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-[#5e8346] text-white uppercase tracking-wider">
+                            🌟 Chào mừng trở lại!
+                        </span>
+                        <h2 class="text-2xl md:text-3xl font-black text-slate-800 tracking-tight">
+                            Hôm nay bạn muốn học gì cùng bé thỏ Usagi?
+                        </h2>
+                        <p id="homeMascotMessage" class="text-sm font-medium text-slate-600 max-w-xl">
+                            Bạn đang có <b id="homeDueCount" class="text-[#f97316] font-extrabold">0</b> từ vựng cần ôn tập. Hãy dành 5 phút để giữ vững chuỗi Streak nhé!
+                        </p>
+                    </div>
+                    <div class="flex-shrink-0 z-10 flex items-center justify-center">
+                        <div class="w-28 h-28 md:w-36 md:h-36 rounded-3xl overflow-hidden border-4 border-white shadow-md bg-white">
+                            <img src="/static/mascot.png" alt="Usagi Rabbit" class="w-full h-full object-cover mascot-bounce">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gamification Card: Streak & Level Progress -->
+                <div class="card-soft p-6 grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                    <!-- Left: Streak Status & Daily Check-in -->
+                    <div class="flex flex-col sm:flex-row items-center gap-4 pr-0 md:pr-6 md:border-r border-slate-100">
+                        <div class="w-16 h-16 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center text-3xl shadow-sm flex-shrink-0">
+                            🔥
+                        </div>
+                        <div class="space-y-1 text-center sm:text-left flex-grow">
+                            <div class="flex items-center justify-center sm:justify-start gap-2">
+                                <span id="homeStreakCount" class="text-3xl font-black text-slate-800">1</span>
+                                <span class="text-sm font-extrabold text-orange-600 uppercase tracking-wider">Ngày Streak Liên Tiếp</span>
+                            </div>
+                            <p class="text-xs text-slate-500 font-medium">Học mỗi ngày để không bị đứt chuỗi lửa!</p>
+                        </div>
+                        <button id="btnDailyCheckin" class="btn-orange-cta px-4 py-2.5 text-xs whitespace-nowrap flex-shrink-0">
+                            🔥 ĐIỂM DANH (+50 XP)
+                        </button>
+                    </div>
+
+                    <!-- Right: Level & XP Bar -->
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Cấp Độ Hiện Tại</span>
+                            <span class="text-sm font-black text-[#5e8346] bg-[#e8f3dc] px-2.5 py-0.5 rounded-full">
+                                Cấp <span id="homeLevelText">1</span>
+                            </span>
+                        </div>
+                        <div class="w-full h-3.5 bg-slate-100 rounded-full overflow-hidden p-0.5 border border-slate-200">
+                            <div id="homeXpProgressBar" class="h-full bg-gradient-to-r from-amber-400 to-[#f97316] rounded-full transition-all duration-500" style="width: 50%;"></div>
+                        </div>
+                        <div class="flex items-center justify-between text-xs font-bold text-slate-400">
+                            <span><span id="homeCurrentXp">50</span> XP</span>
+                            <span>Mục tiêu tiếp theo: <span id="homeNextLevelXp">100</span> XP</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions: 2 Big Rounded Buttons -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <button id="btnQuickGoAdd" class="btn-orange-cta py-5 px-6 flex items-center justify-between group">
+                        <div class="text-left space-y-0.5">
+                            <span class="text-lg font-black block tracking-tight">📖 HỌC TỪ VỰNG MỚI</span>
+                            <span class="text-xs font-medium text-orange-100 block">Tra cứu tự động từ điển 108K từ & trích xuất văn bản</span>
+                        </div>
+                        <span class="text-2xl group-hover:translate-x-1 transition">➔</span>
+                    </button>
+
+                    <button id="btnQuickGoReview" class="btn-slate-cta py-5 px-6 flex items-center justify-between group">
+                        <div class="text-left space-y-0.5">
+                            <span class="text-lg font-black block tracking-tight">⚡ ÔN TẬP NGAY</span>
+                            <span class="text-xs font-medium text-slate-300 block">Kiểm tra trí nhớ với thuật toán lặp lại ngắt quãng SM-2</span>
+                        </div>
+                        <span class="text-2xl group-hover:translate-x-1 transition">🔒</span>
+                    </button>
+                </div>
+
+                <!-- Stats Overview 4 Cards -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    <div class="card-soft p-4 flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-lg">📚</div>
+                        <div>
+                            <span class="text-xs font-bold text-slate-400 block uppercase">Tổng số từ</span>
+                            <span id="statHomeTotal" class="text-xl font-black text-slate-800">0</span>
+                        </div>
+                    </div>
+                    <div class="card-soft p-4 flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-lg">📖</div>
+                        <div>
+                            <span class="text-xs font-bold text-slate-400 block uppercase">Đang học</span>
+                            <span id="statHomeLearning" class="text-xl font-black text-slate-800">0</span>
+                        </div>
+                    </div>
+                    <div class="card-soft p-4 flex items-center gap-3 border-red-200 bg-red-50/30">
+                        <div class="w-10 h-10 rounded-xl bg-red-100 text-red-600 flex items-center justify-center text-lg">⏰</div>
+                        <div>
+                            <span class="text-xs font-bold text-red-500 block uppercase">Đến hạn ôn</span>
+                            <span id="statHomeDue" class="text-xl font-black text-red-600">0</span>
+                        </div>
+                    </div>
+                    <div class="card-soft p-4 flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg">⭐</div>
+                        <div>
+                            <span class="text-xs font-bold text-slate-400 block uppercase">Đã thuộc</span>
+                            <span id="statHomeMastered" class="text-xl font-black text-emerald-600">0</span>
+                        </div>
+                    </div>
+                </div>
+
+            </section>
+
+
+            <!-- ============================================================= -->
+            <!-- TAB 2: THÊM TỪ TỰ ĐỘNG & TRÍCH XUẤT ĐOẠN VĂN -->
+            <!-- ============================================================= -->
+            <section id="tab-add" class="tab-content hidden max-w-5xl mx-auto space-y-6">
+
+                <!-- Sub-tabs Switcher -->
+                <div class="flex items-center gap-2 border-b border-slate-200 pb-2">
+                    <button class="add-subtab-btn active px-4 py-2 font-bold text-sm rounded-xl bg-[#e8f3dc] text-[#5e8346] border border-[#c3dcab]" data-subtab="subtab-single">
+                        🔍 Tra Cứu 1 Từ (Auto-Fill)
+                    </button>
+                    <button class="add-subtab-btn px-4 py-2 font-bold text-sm rounded-xl text-slate-500 hover:bg-slate-100 border border-transparent" data-subtab="subtab-batch">
+                        📜 Trích Xuất Từ Đoạn Văn
+                    </button>
+                </div>
+
+                <!-- SUBTAB A: TRA CỨU 1 TỪ -->
+                <div id="subtab-single" class="space-y-6">
+                    <!-- Search Input Box -->
+                    <div class="card-soft p-6 space-y-4">
+                        <h3 class="text-lg font-black text-slate-800 flex items-center gap-2">
+                            <span>🔍</span> Tra cứu từ vựng tiếng Anh
+                        </h3>
+                        <p class="text-xs text-slate-500">
+                            Nhập từ tiếng Anh. Hệ thống tự động tra nghĩa tiếng Việt từ <code class="text-emerald-700 bg-emerald-50 px-1 py-0.5 rounded font-bold">dict_hh.db</code>, phiên âm IPA, câu ví dụ và từ đồng/trái nghĩa từ WordNet.
+                        </p>
+                        <div class="flex flex-col sm:flex-row gap-3">
+                            <input type="text" id="lookupInput" placeholder="Ví dụ: serendipity, abandon, ubiquitous, ephemeral..." 
+                                   class="input-round flex-grow text-base px-4 py-3 border-slate-200" autocomplete="off">
+                            <button id="btnDoLookup" class="btn-orange-cta px-6 py-3 whitespace-nowrap text-sm">
+                                🔍 Tra Cứu Ngay
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Lookup Result Card (Hidden by default) -->
+                    <div id="lookupResultCard" class="card-soft p-6 space-y-6 hidden border-2 border-[#84a96b]">
+                        <!-- Word Header -->
+                        <div class="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-100">
+                            <div class="flex items-center gap-3">
+                                <h2 id="resWordTitle" class="text-3xl font-black text-slate-800 capitalize"></h2>
+                                <span id="resIpaBadge" class="text-base text-slate-600 font-mono px-3 py-1 bg-slate-100 rounded-xl"></span>
+                                <button id="btnPlayWordAudio" class="btn-speaker" title="Nghe phát âm chuẩn">🔊</button>
+                            </div>
+                            <div id="existingBadge" class="hidden text-xs px-3 py-1 bg-emerald-100 border border-emerald-300 text-emerald-800 rounded-full font-bold">
+                                ✓ Đã có trong kho từ
+                            </div>
+                        </div>
+
+                        <!-- Meaning & Example Fields -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="space-y-2">
+                                <label class="block text-xs font-black text-slate-600 uppercase tracking-wider">
+                                    Nghĩa tiếng Việt (tự động điền)
+                                </label>
+                                <textarea id="resMeaningInput" rows="3" class="input-round w-full text-sm leading-relaxed border-slate-200"></textarea>
+                            </div>
+                            <div class="space-y-2">
+                                <div class="flex items-center justify-between">
+                                    <label class="block text-xs font-black text-slate-600 uppercase tracking-wider">
+                                        Câu ví dụ ngữ cảnh (WordNet)
+                                    </label>
+                                    <button id="btnPlayExampleAudio" class="text-xs text-orange-600 font-bold hover:underline flex items-center gap-1">
+                                        🔊 Nghe ví dụ
+                                    </button>
+                                </div>
+                                <textarea id="resExampleInput" rows="3" class="input-round w-full text-sm leading-relaxed border-slate-200"></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Synonyms & Antonyms Tags -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+                            <div class="space-y-2">
+                                <span class="text-xs font-black text-[#db2777] uppercase tracking-wider block">
+                                    ◈ Từ đồng nghĩa (Synonyms) <span class="text-slate-400 font-normal lowercase">(bấm để tra nhanh)</span>
+                                </span>
+                                <div id="resSynonymsList" class="flex flex-wrap gap-2 min-h-[32px] items-center">
+                                    <span class="text-xs text-slate-400 italic">Không có</span>
+                                </div>
+                            </div>
+                            <div class="space-y-2">
+                                <span class="text-xs font-black text-sky-600 uppercase tracking-wider block">
+                                    ◈ Từ trái nghĩa (Antonyms) <span class="text-slate-400 font-normal lowercase">(bấm để tra nhanh)</span>
+                                </span>
+                                <div id="resAntonymsList" class="flex flex-wrap gap-2 min-h-[32px] items-center">
+                                    <span class="text-xs text-slate-400 italic">Không có</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Raw Dict HTML Collapsible -->
+                        <div class="pt-2 border-t border-slate-100">
+                            <button id="btnToggleDictHtml" class="text-xs text-slate-500 hover:text-slate-800 font-bold flex items-center gap-1 py-1">
+                                <span>▼ Xem định dạng đầy đủ của từ điển gốc (HTML)</span>
+                            </button>
+                            <div id="dictHtmlContainer" class="hidden mt-2 p-4 bg-slate-50 border border-slate-200 rounded-2xl max-h-56 overflow-y-auto text-xs leading-relaxed text-slate-700"></div>
+                        </div>
+
+                        <!-- Save to Vault Button -->
+                        <div class="flex flex-wrap items-center justify-between pt-4 border-t border-slate-100 gap-4">
+                            <div class="flex items-center gap-2 text-xs text-slate-500">
+                                <span>Lần ôn tập đầu tiên sau:</span>
+                                <select id="selectInitialDelay" class="input-round py-1 px-3 text-xs">
+                                    <option value="10">10 giây (Thử nghiệm nhanh)</option>
+                                    <option value="60">1 phút</option>
+                                    <option value="300">5 phút</option>
+                                    <option value="900">15 phút</option>
+                                </select>
+                            </div>
+                            <button id="btnSaveToVault" class="btn-orange-cta px-8 py-3 text-sm">
+                                💾 Lưu Vào Kho Từ Vựng (+10 XP)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SUBTAB B: TRÍCH XUẤT ĐOẠN VĂN -->
+                <div id="subtab-batch" class="space-y-6 hidden">
+                    <div class="card-soft p-6 space-y-4">
+                        <h3 class="text-lg font-black text-slate-800 flex items-center gap-2">
+                            <span>📜</span> Trích xuất từ vựng tự động từ đoạn văn bản
+                        </h3>
+                        <p class="text-xs text-slate-500">
+                            Dán bất kỳ đoạn văn bản tiếng Anh nào. Hệ thống tự động lọc bỏ stopwords, tra cứu nghĩa từ <code class="text-emerald-700 bg-emerald-50 px-1 py-0.5 rounded font-bold">dict_hh.db</code> và lưu hàng loạt vào kho cá nhân.
+                        </p>
+                        <textarea id="paragraphInput" rows="6" placeholder="Paste your English text here..." 
+                                  class="input-round w-full text-sm leading-relaxed p-4 border-slate-200 font-mono"></textarea>
+                        
+                        <div class="flex flex-wrap items-center justify-between gap-4 pt-2">
+                            <div class="flex items-center gap-4 text-xs">
+                                <label class="flex items-center gap-2 cursor-pointer font-bold text-slate-700">
+                                    <input type="checkbox" id="chkAutoSaveBatch" checked class="accent-[#f97316] w-4 h-4">
+                                    <span>Tự động lưu vào kho từ vựng</span>
+                                </label>
+                                <div class="flex items-center gap-2 text-slate-500">
+                                    <span>Hẹn ôn sau:</span>
+                                    <select id="batchInitialDelay" class="input-round py-1 px-2 text-xs">
+                                        <option value="10">10 giây (Test)</option>
+                                        <option value="300">5 phút</option>
+                                        <option value="900">15 phút</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <button id="btnExtractParagraph" class="btn-orange-cta px-6 py-2.5 text-sm">
+                                ⚡ Bắt Đầu Trích Xuất & Lưu
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Batch Result Cards -->
+                    <div id="batchResultsSection" class="hidden space-y-4">
+                        <div class="flex items-center justify-between pb-2 border-b border-slate-200">
+                            <h3 class="text-sm font-black text-slate-700 uppercase tracking-wider">
+                                Kết quả trích xuất (<span id="batchCountBadge">0</span> từ phù hợp)
+                            </h3>
+                        </div>
+                        <div id="batchCardsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+                    </div>
+                </div>
+
+            </section>
+
+
+            <!-- ============================================================= -->
+            <!-- TAB 3: KHO TỪ VỰNG (VOCABULARY VAULT) -->
+            <!-- ============================================================= -->
+            <section id="tab-vault" class="tab-content hidden max-w-6xl mx-auto space-y-6">
+
+                <!-- Search & Filters Bar -->
+                <div class="card-soft p-4 flex flex-col sm:flex-row gap-4 items-center justify-between">
+                    <div class="relative w-full sm:w-80">
+                        <input type="text" id="vaultSearchInput" placeholder="🔍 Tìm kiếm từ hoặc nghĩa..." 
+                               class="input-pill w-full text-sm py-2 pl-9 pr-4 bg-slate-50">
+                        <span class="absolute left-3.5 top-2.5 text-slate-400 text-xs">🔍</span>
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-2">
+                        <button class="filter-pill btn-matcha text-xs py-1.5 px-4 active" data-filter="all">Tất cả</button>
+                        <button class="filter-pill btn-pink text-xs py-1.5 px-4" data-filter="due">⏰ Đến hạn ôn</button>
+                        <button class="filter-pill btn-matcha text-xs py-1.5 px-4" data-filter="learning">📖 Đang học</button>
+                        <button class="filter-pill btn-matcha text-xs py-1.5 px-4" data-filter="mastered">⭐ Đã thuộc</button>
+                    </div>
+                </div>
+
+                <!-- Vocabulary Cards Grid -->
+                <div id="vocabCardsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+                <div id="emptyVaultMsg" class="hidden text-center py-16 text-slate-400 text-sm card-soft">
+                    Kho từ vựng đang trống hoặc không có từ nào khớp bộ lọc.
+                </div>
+
+            </section>
+
+
+            <!-- ============================================================= -->
+            <!-- TAB 4: FLASHCARD STUDY SESSION -->
+            <!-- ============================================================= -->
+            <section id="tab-flashcards" class="tab-content hidden max-w-4xl mx-auto space-y-6">
+                <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+                    <div>
+                        <span class="text-xs font-black uppercase tracking-wider text-[#5e8346]">Active Recall · SM-2</span>
+                        <h2 class="text-2xl font-black text-slate-800">Học Flashcard</h2>
+                        <p class="text-sm text-slate-500">Nhớ nghĩa trước khi lật thẻ, rồi chọn mức độ bạn ghi nhớ.</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <label for="flashcardDeckMode" class="text-xs font-bold text-slate-500">Bộ thẻ:</label>
+                        <select id="flashcardDeckMode" class="input-round text-sm py-2">
+                            <option value="due">Đến hạn ôn</option>
+                            <option value="all">Tất cả từ</option>
+                        </select>
+                        <button id="btnStartFlashcards" class="btn-orange-cta px-4 py-2 text-sm">Bắt đầu</button>
+                    </div>
+                </div>
+
+                <div class="card-soft p-4 sm:p-6 space-y-5">
+                    <div>
+                        <div class="flex items-center justify-between text-xs font-bold text-slate-500 mb-2">
+                            <span id="flashcardProgressLabel">Chưa bắt đầu</span>
+                            <span id="flashcardDeckLabel">Bộ thẻ đến hạn</span>
+                        </div>
+                        <div class="h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                            <div id="flashcardProgressBar" class="h-full bg-gradient-to-r from-[#84a96b] to-[#f97316] rounded-full transition-all duration-500" style="width:0%"></div>
+                        </div>
+                    </div>
+
+                    <div class="flashcard-scene">
+                        <div id="flashcard" class="flashcard" role="group" tabindex="0" aria-label="Mặt trước flashcard. Nhấn Space để lật thẻ">
+                            <div class="flashcard-face flashcard-front">
+                                <span class="flashcard-kicker">TỪ TIẾNG ANH</span>
+                                <div class="flashcard-word-row">
+                                    <h3 id="flashcardWord" class="flashcard-word"></h3>
+                                    <button id="btnFlashcardAudio" class="btn-speaker flashcard-audio" type="button" aria-label="Nghe phát âm">🔊</button>
+                                </div>
+                                <p id="flashcardIpa" class="flashcard-ipa"></p>
+                                <span class="flashcard-flip-hint">Chạm thẻ hoặc nhấn Space để lật</span>
+                            </div>
+                            <div class="flashcard-face flashcard-back">
+                                <span class="flashcard-kicker">NGHĨA TIẾNG VIỆT</span>
+                                <p id="flashcardMeaning" class="flashcard-meaning"></p>
+                                <div id="flashcardExampleBlock" class="flashcard-example-block hidden">
+                                    <div class="flex items-center justify-between gap-3">
+                                        <span class="text-[11px] font-black uppercase tracking-wider text-slate-400">Ví dụ</span>
+                                        <button id="btnFlashcardExampleAudio" class="btn-speaker w-7 h-7 text-xs" type="button" aria-label="Nghe câu ví dụ">🔊</button>
+                                    </div>
+                                    <p id="flashcardExample" class="mt-1 text-sm text-slate-600 italic"></p>
+                                </div>
+                                <div id="flashcardSynonymsBlock" class="flashcard-tags-block hidden">
+                                    <span class="text-[11px] font-black uppercase tracking-wider text-pink-500">Đồng nghĩa</span>
+                                    <div id="flashcardSynonyms" class="flex flex-wrap gap-1.5 mt-1"></div>
+                                </div>
+                                <div id="flashcardAntonymsBlock" class="flashcard-tags-block hidden">
+                                    <span class="text-[11px] font-black uppercase tracking-wider text-sky-600">Trái nghĩa</span>
+                                    <div id="flashcardAntonyms" class="flex flex-wrap gap-1.5 mt-1"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="flashcardMessage" class="min-h-7 text-center text-sm font-bold text-slate-500" aria-live="polite">
+                        Chọn bộ thẻ rồi bấm “Bắt đầu” để học cùng Usagi 🐰
+                    </div>
+
+                    <div id="flashcardRatings" class="grid grid-cols-2 lg:grid-cols-4 gap-3 hidden">
+                        <button class="flashcard-rating rating-again" data-quality="again" type="button">
+                            <span>🔴 Quên</span><small>Ôn lại sau 1 phút</small>
+                        </button>
+                        <button class="flashcard-rating rating-hard" data-quality="hard" type="button">
+                            <span>🟠 Khó</span><small>Ôn lại sau 12 giờ</small>
+                        </button>
+                        <button class="flashcard-rating rating-good" data-quality="good" type="button">
+                            <span>🟢 Nhớ</span><small>Hẹn theo SM-2</small>
+                        </button>
+                        <button class="flashcard-rating rating-easy" data-quality="easy" type="button">
+                            <span>🔵 Rất dễ</span><small>Ôn lại sau 7 ngày</small>
+                        </button>
+                    </div>
+
+                    <div class="flex items-center justify-center gap-3 text-xs text-slate-500">
+                        <img src="/static/mascot.png" alt="Usagi" class="w-9 h-9 rounded-xl object-cover mascot-bounce">
+                        <span id="flashcardMascotMessage">Usagi cổ vũ bạn nhớ thật lâu! ✨</span>
+                    </div>
+                </div>
+            </section>
+
+
+            <!-- ============================================================= -->
+            <!-- TAB 5: ÔN TẬP BẮT BUỘC & CÀI ĐẶT -->
+            <!-- ============================================================= -->
+            <section id="tab-review" class="tab-content hidden max-w-2xl mx-auto space-y-6">
+                <div class="card-soft p-8 space-y-6">
+                    <div class="flex items-center gap-3 pb-4 border-b border-slate-100">
+                        <div class="w-12 h-12 rounded-2xl bg-orange-100 text-orange-600 flex items-center justify-center text-2xl">
+                            🔒
+                        </div>
+                        <div>
+                            <h2 class="text-xl font-black text-slate-800">Cài Đặt Ôn Tập & Giọng Đọc</h2>
+                            <p class="text-xs text-slate-500">Tùy chỉnh chu kỳ nhắc nhở và phát âm offline</p>
+                        </div>
+                    </div>
+
+                    <!-- Lock Screen Master Toggle -->
+                    <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+                        <div>
+                            <span class="text-sm font-black text-slate-800 block">Trạng thái Màn hình Khóa Bắt Buộc</span>
+                            <span class="text-xs text-slate-500">Khóa màn hình yêu cầu gõ đúng từ tiếng Anh khi đến hạn</span>
+                        </div>
+                        <button id="btnSettingToggleLock" class="btn-matcha text-xs py-2 px-4 font-black">
+                            Đang Tạm Dừng
+                        </button>
+                    </div>
+
+                    <!-- Review Cycle Interval -->
+                    <div class="space-y-2">
+                        <label class="block text-xs font-black text-slate-600 uppercase tracking-wider">
+                            Chu kỳ kiểm tra từ vựng đến hạn
+                        </label>
+                        <select id="cfgReviewCycle" class="input-round w-full text-sm">
+                            <option value="10">10 giây (Chế độ Thử nghiệm Nhanh)</option>
+                            <option value="300">5 phút</option>
+                            <option value="900">15 phút</option>
+                            <option value="1800">30 phút</option>
+                        </select>
+                    </div>
+
+                    <!-- Web Speech API Settings -->
+                    <div class="space-y-4 pt-4 border-t border-slate-100">
+                        <h4 class="text-xs font-black text-slate-600 uppercase tracking-wider">Web Speech API (Giọng đọc Offline)</h4>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div class="space-y-1">
+                                <label class="block text-xs text-slate-500 font-bold">Giọng chuẩn</label>
+                                <select id="cfgSpeechVoice" class="input-round w-full text-sm">
+                                    <option value="en-US">Anh - Mỹ (en-US)</option>
+                                    <option value="en-GB">Anh - Anh (en-GB)</option>
+                                </select>
+                            </div>
+                            <div class="space-y-1">
+                                <label class="block text-xs text-slate-500 font-bold">Tốc độ đọc</label>
+                                <select id="cfgSpeechRate" class="input-round w-full text-sm">
+                                    <option value="1.0">Chuẩn (1.0x)</option>
+                                    <option value="0.75">Chậm (0.75x)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <button id="btnTestVoice" class="btn-matcha text-xs py-2 px-4 flex items-center gap-1.5">
+                            <span>🔊</span> Nghe thử giọng phát âm
+                        </button>
+                    </div>
+
+                    <!-- Immediate Practice Action -->
+                    <div class="pt-4 border-t border-slate-100 flex items-center justify-between gap-4">
+                        <button id="btnForceStartReview" class="btn-slate-cta py-3 px-6 text-sm flex items-center gap-2">
+                            <span>⚡</span> Luyện Tập Ngay Bây Giờ
+                        </button>
+                        <button id="btnSaveSettings" class="btn-orange-cta py-3 px-6 text-sm">
+                            Lưu Cài Đặt
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- 3. CHỨC NĂNG 4: MANDATORY LOCK SCREEN OVERLAY (USAGI MASCOT THEME) -->
+    <!-- ================================================================= -->
+    <div id="lockScreenOverlay" role="dialog" aria-modal="true">
+        <div class="lock-container space-y-6">
+            <!-- Dismiss / Emergency Close button -->
+            <button id="btnDismissLock" class="absolute top-4 right-4 text-xs py-1.5 px-3 rounded-full bg-slate-100 text-slate-500 hover:text-slate-800 hover:bg-slate-200 font-bold transition" title="Tạm dừng màn hình khóa">
+                ✕ Tạm dừng & Đóng
+            </button>
+
+            <!-- Mascot Header -->
+            <div class="flex flex-col items-center gap-2">
+                <div class="w-20 h-20 rounded-3xl overflow-hidden border-4 border-[#f97316] bg-white shadow-lg flex items-center justify-center p-1">
+                    <img src="/static/mascot.png" alt="Usagi Guardian" class="w-full h-full object-cover">
+                </div>
+                <h2 class="text-xl md:text-2xl font-black text-slate-800 tracking-tight">
+                    BÉ THỎ USAGI ĐANG GIÁM SÁT ÔN TẬP! 🐰
+                </h2>
+                <p class="text-xs text-slate-500 font-medium max-w-md">
+                    Bạn có từ vựng đến hạn ôn tập. Hãy gõ chính xác từ tiếng Anh để được cộng <b class="text-[#f97316]">+20 XP</b> và mở khóa!
+                </p>
+                <div class="text-xs px-3 py-1 bg-orange-50 border border-orange-200 text-orange-700 rounded-full font-extrabold">
+                    Còn lại: <span id="lockRemainingCount">1</span> từ cần hoàn thành
+                </div>
+            </div>
+
+            <!-- Flashcard Question Section -->
+            <div class="p-6 bg-[#fffdf5] border-2 border-amber-200/80 rounded-2xl space-y-4 text-left">
+                <!-- Meaning -->
+                <div>
+                    <span class="text-xs font-black text-[#5e8346] uppercase tracking-wider">Nghĩa tiếng Việt:</span>
+                    <p id="lockMeaningText" class="text-base text-slate-800 font-bold mt-1 leading-relaxed"></p>
+                </div>
+
+                <!-- Pronunciation & Audio -->
+                <div class="flex items-center gap-4 pt-2 border-t border-amber-100">
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs text-slate-500 font-bold">Phiên âm:</span>
+                        <span id="lockIpaText" class="text-sm font-mono text-slate-700 font-bold"></span>
+                    </div>
+                    <button id="btnLockAudio" class="btn-speaker w-7 h-7 text-xs" title="Nghe phát âm từ này">
+                        🔊
+                    </button>
+                </div>
+
+                <!-- Masked Word Display -->
+                <div class="pt-3 border-t border-amber-100 text-center">
+                    <span class="text-xs text-slate-400 block mb-1 font-bold">Độ dài từ tiếng Anh:</span>
+                    <div id="lockMaskedWord" class="font-mono text-2xl tracking-[0.4em] text-[#f97316] font-black">
+                        _ _ _ _ _
+                    </div>
+                </div>
+            </div>
+
+            <!-- Typing Input -->
+            <div class="space-y-3">
+                <input type="text" id="lockInputAnswer" placeholder="Gõ từ tiếng Anh vào đây..." 
+                       class="input-round w-full text-center text-lg py-3 tracking-widest uppercase font-mono font-black border-2 border-slate-300 focus:border-[#f97316]" 
+                       autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+                
+                <!-- Feedback message -->
+                <div id="lockFeedbackMsg" class="min-h-[24px] text-xs font-black"></div>
+
+                <div class="flex items-center justify-center gap-3 pt-2">
+                    <button id="btnLockHint" class="btn-matcha text-xs py-2 px-4" title="Xem gợi ý (Phạt hẹn lại sau 2 phút!)">
+                        💡 Gợi ý chữ cái (Phạt 2p)
+                    </button>
+                    <button id="btnLockSubmit" class="btn-orange-cta py-3 px-8 text-sm">
+                        Mở Khóa (Enter)
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- 4. MODAL POPUP TRA NHANH TỪ ĐIỂN (QUICK LOOKUP POPUP) -->
+    <!-- ================================================================= -->
+    <div id="quickLookupModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="card-soft max-w-lg w-full p-6 space-y-4 relative">
+            <button id="btnCloseQuickLookup" class="absolute top-4 right-4 text-slate-400 hover:text-slate-800 text-lg font-bold">&times;</button>
+            <div class="flex items-center gap-3 pb-2 border-b border-slate-100">
+                <h3 id="quickWordTitle" class="text-2xl font-black text-slate-800 capitalize"></h3>
+                <span id="quickIpaBadge" class="text-sm font-mono text-slate-500 bg-slate-100 px-2 py-0.5 rounded-lg"></span>
+                <button id="btnQuickAudio" class="btn-speaker text-xs w-7 h-7">🔊</button>
+            </div>
+            <div>
+                <span class="text-xs font-black text-slate-400 uppercase tracking-wider">Nghĩa tiếng Việt:</span>
+                <p id="quickMeaningText" class="text-sm font-semibold text-slate-700 mt-1 leading-relaxed"></p>
+            </div>
+            <div id="quickExampleBox" class="p-3 bg-slate-50 rounded-xl text-xs text-slate-600 italic border-l-2 border-[#f97316] hidden">
+                <p id="quickExampleText"></p>
+            </div>
+            <div class="pt-2 flex justify-end gap-2">
+                <button id="btnQuickAddToVault" class="btn-orange-cta text-xs py-2 px-5">
+                    + Thêm vào kho từ vựng
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Vocab Modal -->
+    <div id="editModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="card-soft max-w-lg w-full p-6 space-y-4">
+            <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+                <h3 id="editModalTitle" class="text-base font-black text-slate-800 uppercase">Sửa từ vựng</h3>
+                <button id="btnCancelEdit" class="text-slate-400 hover:text-slate-800 text-xl font-bold">&times;</button>
+            </div>
+            <input type="hidden" id="editVocabId">
+            <div class="space-y-1">
+                <label class="block text-xs font-black text-slate-500 uppercase">Nghĩa tiếng Việt</label>
+                <textarea id="editMeaningInput" rows="3" class="input-round w-full text-sm"></textarea>
+            </div>
+            <div class="space-y-1">
+                <label class="block text-xs font-black text-slate-500 uppercase">Phiên âm IPA</label>
+                <input type="text" id="editIpaInput" class="input-round w-full text-sm font-mono">
+            </div>
+            <div class="space-y-1">
+                <label class="block text-xs font-black text-slate-500 uppercase">Câu ví dụ</label>
+                <textarea id="editExampleInput" rows="2" class="input-round w-full text-sm"></textarea>
+            </div>
+            <div class="flex justify-end gap-2 pt-2">
+                <button id="btnCancelEdit2" class="btn-matcha text-xs py-2 px-4">Hủy</button>
+                <button id="btnSaveEdit" class="btn-orange-cta text-xs py-2 px-6">Lưu thay đổi</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
